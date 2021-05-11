@@ -6,6 +6,21 @@
 
 > 实际效果比动图中更流畅，因为动图太大，因此压缩了质量，具体效果以实际运行为准。
 
+# 下载/使用
+
+```bash
+npm i fly-image
+```
+
+```js
+import FlyImage from 'fly-image'
+const options = {
+  modal: false,
+  size: 0.5
+}
+new FlyImage(img, options)
+```
+
 
 # options
 
