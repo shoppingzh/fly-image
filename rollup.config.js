@@ -1,3 +1,5 @@
+import { babel } from '@rollup/plugin-babel'
+
 export default {
   input: 'src/index.js',
   output: [{
@@ -7,5 +9,10 @@ export default {
     file: 'fly-image.umd.js',
     format: 'umd',
     name: 'FlyImage'
-  }]
+  }],
+  plugins: [
+    babel({
+      babelHelpers: 'bundled'
+    })
+  ]
 }

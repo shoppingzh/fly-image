@@ -2,7 +2,7 @@
 
 会飞的图片查看器
 
-![fly-image](./images/fly-image.gif)
+![fly-image](https://github.com/shoppingzh/fly-image/raw/main/images/fly-image.gif)
 
 > 实际效果比动图中更流畅，因为动图太大，因此压缩了质量，具体效果以实际运行为准。
 
@@ -133,11 +133,11 @@ requestAnimationFrame(() => {
 
 假设页面中有一张图片，位于视口的偏左下角：
 
-![](./images/1.png)
+![](https://github.com/shoppingzh/fly-image/raw/main/images/1.png)
 
 图中`cw`、`ch`为视口宽高，`w0`、`h0`为图片宽高。将这张图放大查看的效果如下图所示：
 
-![](./images/2.png)
+![](https://github.com/shoppingzh/fly-image/raw/main/images/2.png)
 
 由于目标图的宽度是固定的，因此，这种模式的核心在于：
 
@@ -201,7 +201,7 @@ scale = w1 / w0
 
 在这种模式下，不同尺寸的图片可能有两种展示方式：
 
-![](./images/3.png)
+![](https://github.com/shoppingzh/fly-image/raw/main/images/3.png)
 
 这种方法仍然有缺陷：
 
@@ -226,3 +226,9 @@ if (size > 0) {
 ```
 
 这样，最终我们就确定了目标图的最终展示尺寸。
+
+
+# 性能问题
+
+- 事件绑定
+- 资源回收
