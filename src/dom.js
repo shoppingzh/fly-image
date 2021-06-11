@@ -1,4 +1,14 @@
 /**
+ * 获取视口大小
+ */
+export function getViewport() {
+  return {
+    width: window.innerWidth || document.body.clientWidth,
+    height: window.innerHeight || document.body.clientHeight
+  }
+}
+
+/**
  * 设置元素样式
  * @param {HtmlElement} el 元素
  * @param {Object} styles 样式信息

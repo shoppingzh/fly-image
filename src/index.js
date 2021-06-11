@@ -1,12 +1,16 @@
 import defaults from './options'
-import { css, getBounds, loadImage, lockBodyScroll, requestAnimationFrame } from './dom'
+import { css, getBounds, loadImage, lockBodyScroll, requestAnimationFrame, getViewport } from './dom'
 
+/**
+ * 获取容器边界
+ */
 function getContainerBounds() {
+  const viewport = getViewport()
   return {
     x: 0,
     y: 0,
-    w: document.body.clientWidth,
-    h: document.body.clientHeight
+    w: viewport.width,
+    h: viewport.height
   }
 }
 
@@ -20,8 +24,10 @@ export default class FlyImage {
   }
 
   init() {
+    this.size = this.options.size < 0 ? 0 : this.options.size
     css(this.el, { cursor: 'zoom-in' })
-    this.el.addEventListener('click', this.open.bind(this))
+    this.openHandler = this.open.bind(this)
+    this.el.addEventListener('click', this.openHandler)
   }
 
   // 获取原图的尺寸
@@ -38,11 +44,6 @@ export default class FlyImage {
         reject(err)
       })
     })
-  }
-
-  getSize() {
-    const size = this.options.size
-    return size < 0 ? 0 : (size || 0)
   }
 
   createContainer() {
@@ -101,11 +102,11 @@ export default class FlyImage {
     requestAnimationFrame(() => {
       const containerBounds = getContainerBounds()
       this.getOriginalSize().then(originalSize => {
-        const overflow = originalSize.w > containerBounds.w // 是否超出容器
-        let scale = overflow ? ((containerBounds.w - 40) / bounds.w) : (originalSize.w / bounds.w)
-        const size = this.getSize()
-        if (size > 0) {
-          scale = (containerBounds.w * size) / bounds.w
+        const tw = Math.max(bounds.w, originalSize.w) // 目标宽度取展示宽度与原图宽度的较大值(可处理小图被放大展示的情况)
+        const overflow = tw > containerBounds.w // 是否超出容器
+        let scale = overflow ? ((containerBounds.w - 20) / bounds.w) : (tw / bounds.w)
+        if (this.size > 0) {
+          scale = (containerBounds.w * this.size) / bounds.w
         }
         const targetSize = {
           w: bounds.w * scale,
@@ -149,6 +150,9 @@ export default class FlyImage {
     if (cb) {
       cb.call(this)
     }
+  }
+
+  destroy() {
   }
 
 
