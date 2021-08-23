@@ -74,7 +74,7 @@ export default class FlyImage {
     el.src = this.el.src
     css(el, {
       cursor: 'zoom-out',
-      transition: 'transform .5s ease-out'
+      transition: 'transform .3s ease-in-out'
     })
     return el
   }
