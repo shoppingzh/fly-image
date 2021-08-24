@@ -41,7 +41,9 @@ export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      resolve(img)
+      setTimeout(() => {
+        resolve(img)
+      }, 3000)
     }
     img.onerror = (err) => {
       reject(err)
@@ -73,4 +75,26 @@ export function requestAnimationFrame(cb) {
       cb()
     }, 16)
   }
+}
+
+/**
+ * 获取图片的原始大小
+ * @param {HtmlImageElement} img 图片
+ */
+export function getImageNaturalSize(img) {
+  return new Promise((resolve, reject) => {
+    if (!img) return reject()
+    const w = img.naturalWidth
+    const h = img.naturalHeight
+    if (w || h) {
+      resolve({ w, h })
+    } else {
+      loadImage(img.src).then(img => {
+        resolve({ w: img.width, h: img.height })
+      }).catch(err => {
+        reject(err)
+      })
+    }
+  })
+  
 }

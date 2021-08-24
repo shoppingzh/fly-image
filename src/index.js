@@ -1,18 +1,11 @@
 import defaults from './options'
-import { css, getBounds, loadImage, lockBodyScroll, requestAnimationFrame, getViewport } from './dom'
-
-/**
- * 获取容器边界
- */
-function getContainerBounds() {
-  const viewport = getViewport()
-  return {
-    x: 0,
-    y: 0,
-    w: viewport.width,
-    h: viewport.height
-  }
-}
+import {
+  css,
+  getBounds,
+  lockBodyScroll,
+  requestAnimationFrame,
+  getImageNaturalSize
+} from './dom'
 
 export default class FlyImage {
 
@@ -25,134 +18,156 @@ export default class FlyImage {
 
   init() {
     this.size = this.options.size < 0 ? 0 : this.options.size
+    this.handlers = {}
+    this.session = null
+
+    this.handlers.open = this.open.bind(this)
     css(this.el, { cursor: 'zoom-in' })
-    this.openHandler = this.open.bind(this)
-    this.el.addEventListener('click', this.openHandler)
-  }
-
-  // 获取原图的尺寸
-  getOriginalSize() {
-    return new Promise((resolve, reject) => {
-      if (this.originalSize) return resolve(this.originalSize)
-      loadImage(this.el.src).then(img => {
-        this.originalSize = {
-          w: img.width,
-          h: img.height
-        }
-        resolve(this.originalSize)
-      }).catch(err => {
-        reject(err)
-      })
-    })
-  }
-
-  createContainer() {
-    const outerEl = document.createElement('div')
-    css(outerEl, {
-      position: 'fixed',
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
-      zIndex: this.options.zIndex,
-      backgroundColor: this.options.modal ? 'rgba(0, 0, 0, .5)' : null
-    })
-    const innerEl = document.createElement('div')
-    css(innerEl, {
-      overflow: 'auto',
-      height: '100%'
-    })
-    outerEl.appendChild(innerEl)
-    outerEl.addEventListener('click', () => {
-      this.close()
-    })
-    return { outerEl, innerEl }
-  }
-
-  createImage() {
-    const el = new Image()
-    el.src = this.el.src
-    css(el, {
-      cursor: 'zoom-out',
-      transition: 'transform .3s ease-in-out'
-    })
-    return el
+    this.el.addEventListener('click', this.handlers.open)
   }
 
   open() {
+    this.opened = true
+    this.session = {}
+    // 锁定页面滚动
     lockBodyScroll(true)
 
+    // 第一个渲染帧：遮罩层、查看层、图片初始化
     const doc = document.createDocumentFragment()
-    const { outerEl, innerEl } =  this.createContainer()
-
-    // 获取原图位置，将目标图移动到原图相同的位置
-    const imgEl = this.createImage()
+    const modalEl = this._createModal()
+    const viewerEl = this._createViewer()
+    const imgEl = this._createFlyImage(this.el.src)
     const bounds = getBounds(this.el)
     const sourceStyle = {
       width: `${bounds.w}px`,
+      height: `${bounds.h}px`,
       transform: `translate(${bounds.x}px, ${bounds.y}px)`
     }
     css(imgEl, sourceStyle)
-
-    innerEl.appendChild(imgEl)
-    doc.appendChild(outerEl)
+    viewerEl.appendChild(imgEl)
+    modalEl.appendChild(viewerEl)
+    doc.appendChild(modalEl)
     document.body.appendChild(doc)
 
-    // 下一个渲染帧，将图片动画至屏幕中央，设置合适的大小
+    const containerBounds = {
+      x: modalEl.offsetLeft,
+      y: modalEl.offsetTop,
+      w: modalEl.clientWidth,
+      h: modalEl.clientHeight
+    }
+
+    Object.assign(this.session, {
+      modalEl,
+      viewerEl,
+      imgEl,
+      bounds,
+      sourceStyle,
+      containerBounds
+    })
+
+
+    // 下一个渲染帧：将图片动画至屏幕中央，设置合适的大小
     requestAnimationFrame(() => {
-      const containerBounds = getContainerBounds()
-      this.getOriginalSize().then(originalSize => {
+      
+      this._getOriginalSize().then(originalSize => {
         const tw = Math.max(bounds.w, originalSize.w) // 目标宽度取展示宽度与原图宽度的较大值(可处理小图被放大展示的情况)
         const overflow = tw > containerBounds.w // 是否超出容器
-        let scale = overflow ? ((containerBounds.w - 20) / bounds.w) : (tw / bounds.w)
+        let scale = overflow ? ((containerBounds.w - this.options.offset * 2) / bounds.w) : (tw / bounds.w)
         if (this.size > 0) {
           scale = (containerBounds.w * this.size) / bounds.w
         }
-        const targetSize = {
-          w: bounds.w * scale,
-          h: bounds.h * scale
-        }
+        const targetSize = { w: bounds.w * scale, h: bounds.h * scale }
         const translate = {
           x: (containerBounds.w - bounds.w) / 2,
-          y: (Math.max(containerBounds.h, targetSize.h) - bounds.h) / 2 + 20 // 注：当展示图过高时，容器实际大小为容器宽度和展示图宽度构成的区域
+          y: (Math.max(containerBounds.h, targetSize.h) - bounds.h) / 2 + this.options.offset // 注：当展示图过高时，容器实际大小为容器宽度和展示图宽度构成的区域
         }
         const targetStyle = {
           transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`
         }
         css(imgEl, targetStyle)
 
-        this.session = {
-          containerEl: outerEl,
-          imgEl,
-          bounds,
+        Object.assign(this.session, {
           originalSize,
           targetSize,
-          containerBounds,
-          sourceStyle,
           targetStyle
-        }
-        this.onOpen()
+        })
+        this._onOpen()
+      }).catch(err => {
+        this._close()
       })
     })
   }
 
   close() {
     css(this.session.imgEl, this.session.sourceStyle)
-    this.session.containerEl.addEventListener('transitionend', () => {
-      document.body.removeChild(this.session.containerEl)
-      lockBodyScroll(false)
-      this.session = null
+    this.session.modalEl.addEventListener('transitionend', () => {
+      this._close()
     })
   }
 
-  onOpen() {
+  destroy() {
+    // 资源清理
+    // ...
+  }
+
+  // 获取原图的尺寸
+  _getOriginalSize() {
+    if (this.originalSize) return Promise.resolve(this.originalSize)
+    return getImageNaturalSize(this.el).then(size => {
+      this.originalSize = size
+      return size
+    })
+  }
+
+  _createModal() {
+    const el = document.createElement('div')
+    css(el, {
+      position: 'fixed',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      zIndex: this.options.zIndex,
+      backgroundColor: this.options.modal ? 'rgba(100, 100, 100, .5)' : null
+    })
+    el.addEventListener('click', () => {
+      this.close()
+    })
+    return el
+  }
+
+  _createViewer() {
+    const el = document.createElement('div')
+    css(el, {
+      width: '100%',
+      height: '100%',
+      overflow: 'auto'
+    })
+    return el
+  }
+
+  _createFlyImage() {
+    const img = new Image()
+    img.src = this.el.src
+    css(img, {
+      cursor: 'zoom-out',
+      transition: `transform ${this.options.speed}ms ease-out`
+    })
+    return img
+  }
+
+  _onOpen() {
     const cb = this.options.onOpen
     if (cb) {
       cb.call(this)
     }
   }
 
-  destroy() {
+  _close() {
+    document.body.removeChild(this.session.modalEl)
+    lockBodyScroll(false)
+    this.session = null
+    this.opened = false
   }
 
 
