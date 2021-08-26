@@ -49,6 +49,10 @@ export default class FlyImage {
     doc.appendChild(modalEl)
     document.body.appendChild(doc)
 
+    if (this.options.hide) {
+      this.el.style.visibility = 'hidden'
+    }
+
     const containerBounds = {
       x: modalEl.offsetLeft,
       y: modalEl.offsetTop,
@@ -64,6 +68,7 @@ export default class FlyImage {
       sourceStyle,
       containerBounds
     })
+    
 
 
     // 下一个渲染帧：将图片动画至屏幕中央，设置合适的大小
@@ -164,6 +169,7 @@ export default class FlyImage {
   }
 
   _close() {
+    this.el.style.visibility = null
     document.body.removeChild(this.session.modalEl)
     lockBodyScroll(false)
     this.session = null

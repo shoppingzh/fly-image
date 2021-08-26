@@ -36,6 +36,7 @@ zIndex | number | z-index | 10000 | -
 size | number | 图片宽度 / 容器宽度，默认为0，图片宽度动态计算 | 0 | [0, N]
 offset | number | 图片全屏显示时，距离四周的偏移量(px) | 20 | -
 speed | number | 飞行速度(ms) | 250 | -
+hide | boolean | 是否隐藏原图 | false | -
 
 # 原理
 
