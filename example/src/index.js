@@ -6,9 +6,7 @@ window.addEventListener('DOMContentLoaded', e => {
   document.querySelectorAll('img').forEach(img => {
     const viewer = new ImageViewer(img, {
       modal: true,
-      zIndex: 1000,
-      speed: 300,
-      hide: true
+      zIndex: 1000
     })
     arr.push(viewer)
   })

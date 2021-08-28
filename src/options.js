@@ -4,6 +4,6 @@ export default {
   size: 0,
   offset: 20,
   speed: 250,
-  hide: true
+  hide: false
 }
 
