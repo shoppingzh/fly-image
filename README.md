@@ -47,3 +47,8 @@ hide | boolean | 是否隐藏原图 | false | -
 
 - 事件绑定
 - 资源回收
+
+如何提高性能？
+- 使用`HTMLImageElement.naturalWidth`api，减少请求次数
+- 提前准备上下文数据
+- 只准备一次上下文数据，不频繁生成

@@ -41,9 +41,7 @@ export function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      setTimeout(() => {
-        resolve(img)
-      }, 3000)
+      resolve(img)
     }
     img.onerror = (err) => {
       reject(err)
@@ -82,19 +80,16 @@ export function requestAnimationFrame(cb) {
  * @param {HtmlImageElement} img 图片
  */
 export function getImageNaturalSize(img) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async(resolve, reject) => {
     if (!img) return reject()
     const w = img.naturalWidth
     const h = img.naturalHeight
-    if (w || h) {
-      resolve({ w, h })
-    } else {
-      loadImage(img.src).then(img => {
-        resolve({ w: img.width, h: img.height })
-      }).catch(err => {
-        reject(err)
-      })
+    if (w || h)  return resolve({ w, h })
+    try {
+      const image = await loadImage(img.src)
+      resolve({ w: image.width, h: image.height })
+    } catch (err) {
+      reject(err)
     }
   })
-  
 }
