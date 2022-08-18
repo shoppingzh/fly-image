@@ -1,6 +1,7 @@
 node_modules
-fly-image*.js
-package-lock.json
 yarn.lock
+yarn-error.log
+package-lock.json
 
 dist
+lib
